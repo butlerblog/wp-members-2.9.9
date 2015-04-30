@@ -99,7 +99,7 @@ function wpmem_do_wp_register_form()
 
 				default:
 					$input = '<input type="' . $field[3] . '" name="' . $field[2] . '" id="' . $field[2] . '" class="input" value="'; 
-					$input.= ( $_POST ) ? esc_attr( $_POST[ $field[2] ] ) : ''; 
+					$input.= ( isset( $_POST[ $field[2] ] ) ) ? esc_attr( $_POST[ $field[2] ] ) : ''; 
 					$input.= '" size="25" />';
 					break;
 				}
