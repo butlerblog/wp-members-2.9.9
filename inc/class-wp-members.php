@@ -273,6 +273,11 @@ class WP_Members {
 	function is_blocked() {
 	
 		global $post;
+		
+		//sometimes $post doesn't exists 
+		if (empty($post)) {
+		    return ;
+		}
 
 		// Backward compatibility for old block/unblock meta.
 		$meta = get_post_meta( $post->ID, '_wpmem_block', true );
