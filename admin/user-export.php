@@ -6,19 +6,19 @@
  *
  * This file is part of the WP-Members plugin by Chad Butler
  * You can find out more about this plugin at http://rocketgeek.com
- * Copyright (c) 2006-2016  Chad Butler
+ * Copyright (c) 2006-2017  Chad Butler
  * WP-Members(tm) is a trademark of butlerblog.com
  *
  * @package WP-Members
  * @author Chad Butler
- * @copyright 2006-20165
+ * @copyright 2006-2017
  */
-
 
 /**
  * New export function to export all or selected users
  *
  * @since 2.9.7
+ * @since 3.2.0 Updated to use fputcsv
  *
  * @param array $args
  * @param array $users
@@ -59,17 +59,18 @@ function wpmem_export_users( $args, $users = null ) {
 	header( "Content-Disposition: attachment; filename=" . $args['filename'] );
 	header( "Content-Type: text/csv; charset=" . get_option( 'blog_charset' ), true );
 
-	$export_fields = array_filter( $args['export_fields'], function ( $field ) use ( $args ) {
-		return !in_array( $field[2], $args['exclude_fields'] );
-	});
-
 	$handle = fopen( 'php://output', 'w' );
 	fputs( $handle, "\xEF\xBB\xBF" ); // UTF-8 BOM
 
 	$header = [ 'User ID', 'Username' ];
-	array_walk($export_fields, function ( $field ) use ( &$header ) {
-		$header[] = $field[1];
-	});
+	// Remove excluded fields from $export_fields while setting up $header array.
+	foreach ( $args['export_fields'] as $meta => $field ) {
+		if ( in_array( $meta, $args['exclude_fields'] ) ) {
+			unset( $args['export_fields'][ $meta ] );
+		} else {
+			$header[] = $field['label'];
+		}
+	}
 
 	if ( $wpmem->mod_reg == 1 ) {
 		$header[] = __( 'Activated?', 'wp-members');
@@ -85,19 +86,17 @@ function wpmem_export_users( $args, $users = null ) {
 
 	fputcsv( $handle, $header );
 
-	/*
-	 * Loop through the array of users,
-	 * build the data, delimit by commas, wrap fields with double quotes,
-	 * use \n switch for new line.
-	 */
+	// Loop through the array of users, assemble csv.
+	// $args['export_fields'] only includes fields to be exported at this point.
 	foreach ( $users as $user ) {
 
 		$user_info = get_userdata( $user );
 
 		$wp_user_fields = [ 'user_email', 'user_nicename', 'user_url', 'display_name' ];
-		$row = array_map(function ( $field ) use ( $user, $user_info, $wp_user_fields ) {
-			return in_array( $field[2], $wp_user_fields ) ? $user_info->{$field[2]} : get_user_meta( $user, $field[2], true );
-		}, $export_fields);
+		$row = array();
+		foreach ( $args['export_fields'] as $meta => $field ) {
+			$row[] = in_array( $meta, $wp_user_fields ) ? $user_info->{$meta} : get_user_meta( $user, $meta, true );
+		}
 
 		$row = array_merge(
 			[
@@ -128,7 +127,7 @@ function wpmem_export_users( $args, $users = null ) {
 	}
 
 	fclose( $handle );
-	print(ob_get_clean());
+	print( ob_get_clean() );
 
 	exit();
 }
