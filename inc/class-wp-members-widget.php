@@ -79,7 +79,7 @@ class widget_wpmemwidget extends WP_Widget {
 	function widget( $args, $instance ) {
 
 		// Get the Widget Title
-		$title       = ( array_key_exists( 'title', $instance ) )       ? $instance['title']       : __( 'Login Status', 'wp-members' );
+		$title = apply_filters('widget_title', ( array_key_exists( 'title', $instance ) ) ? $instance['title'] : __( 'Login Status', 'wp-members' ), $instance, $this->id_base);
 		$redirect_to = ( array_key_exists( 'redirect_to', $instance ) ) ? $instance['redirect_to'] : '';
 
 		echo $args['before_widget'];
